@@ -1,7 +1,7 @@
 import React from 'react';
 import { WeatherData } from '@/types/weather';
 import Card from '../ui/Card';
-import { formatTime } from '@/lib/weather';
+import { formatTime, getWindDirection } from '@/lib/weather';
 
 interface WeatherDetailsProps {
   data: WeatherData;
@@ -36,7 +36,7 @@ export default function WeatherDetails({ data }: WeatherDetailsProps) {
   const sunrise = data.daily.sunrise?.[todayIndex];
   const sunset = data.daily.sunset?.[todayIndex];
   const daylightDuration = data.daily.daylightDuration?.[todayIndex];
-  const precipitationProbability = data.daily.precipitationProbabilityMax?.[todayIndex];
+  const windDirection = data.daily.windDirection10mDominant?.[todayIndex]; // 获取风向数据
   
   return (
     <Card title="详细信息" className="mb-6">
@@ -84,9 +84,9 @@ export default function WeatherDetails({ data }: WeatherDetailsProps) {
         </div>
         
         <div className="p-3">
-          <div className="text-sm text-gray-500 dark:text-gray-400">降水概率</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">风向</div>
           <div className="text-xl font-medium mt-1">
-            {precipitationProbability ? `${formatDisplayNumber(precipitationProbability)}%` : "暂无数据"}
+            {windDirection !== undefined ? getWindDirection(windDirection) : "未知"}
           </div>
         </div>
         

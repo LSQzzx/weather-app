@@ -15,6 +15,7 @@ export interface WeatherData {
     cloudCover: number;
     pressureMsl: number;
     surfacePressure: number;
+    weatherCode: number; // 添加 weatherCode
   };
   minutely15: {
     time: Date[];
@@ -46,6 +47,7 @@ export interface WeatherData {
     isDay: Float32Array;
     lightningPotential: Float32Array;
     sunshineDuration: Float32Array;
+    weatherCode: Int32Array; // 添加 weatherCode
   };
   daily: {
     time: Date[];
@@ -65,7 +67,7 @@ export interface WeatherData {
     snowfallSum: Float32Array;
     precipitationSum: Float32Array;
     precipitationHours: Float32Array;
-    precipitationProbabilityMax: Float32Array;
+    weatherCode: Int32Array; // 替换 precipitationProbabilityMax
   };
   location: {
     latitude: number;
@@ -79,7 +81,7 @@ export interface WeatherData {
 export interface WeatherParams {
   latitude: number;
   longitude: number;
-  daily?: string[];
+  daily: string[];
   hourly?: string[];
   models?: string;
   current?: string[];

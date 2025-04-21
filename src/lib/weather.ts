@@ -9,7 +9,7 @@ const DEFAULT_PARAMS: WeatherParams = {
     "apparent_temperature_min", "wind_speed_10m_max", "wind_gusts_10m_max", 
     "wind_direction_10m_dominant", "sunrise", "sunset", "daylight_duration", 
     "sunshine_duration", "rain_sum", "showers_sum", "snowfall_sum", 
-    "precipitation_sum", "precipitation_hours", "precipitation_probability_max"
+    "precipitation_sum", "precipitation_hours", "weather_code" // 修改此行，去掉precipitation_probability_max，添加weather_code
   ],
   hourly: [
     "temperature_2m", "relative_humidity_2m", "dew_point_2m", 
@@ -17,14 +17,14 @@ const DEFAULT_PARAMS: WeatherParams = {
     "snowfall", "snow_depth", "pressure_msl", "surface_pressure", 
     "cloud_cover", "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high", 
     "visibility", "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", 
-    "is_day", "lightning_potential", "sunshine_duration"
+    "is_day", "lightning_potential", "sunshine_duration", "weather_code" // 添加weather_code
   ],
   models: "icon_global",
   current: [
     "temperature_2m", "relative_humidity_2m", "apparent_temperature", "is_day", 
     "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "rain", 
     "precipitation", "showers", "snowfall", "cloud_cover", 
-    "pressure_msl", "surface_pressure"
+    "pressure_msl", "surface_pressure", "weather_code" // 添加weather_code
   ],
   minutely_15: ["precipitation", "rain", "snowfall"],
   timezone: "Asia/Shanghai", // 明确指定为中国时区
@@ -70,15 +70,10 @@ export async function getWeatherData(params: Partial<WeatherParams> = {}): Promi
     const sunrise = daily.variables(7)!;
     const sunset = daily.variables(8)!;
     
-    // 打印一些调试信息
-    console.log('时区信息:', timezone, timezoneAbbreviation, utcOffsetSeconds);
-    console.log('当前时间戳:', Number(current.time()));
-    console.log('当前日期时间:', new Date(Number(current.time()) * 1000).toISOString());
-    
     // 构建天气数据对象，使用修复的时间处理
     const weatherData: WeatherData = {
       current: {
-        time: createLocalDate(Number(current.time())), // 不添加utcOffsetSeconds
+        time: createLocalDate(Number(current.time())),
         temperature2m: formatNumber(current.variables(0)!.value()),
         relativeHumidity2m: formatNumber(current.variables(1)!.value()),
         apparentTemperature: formatNumber(current.variables(2)!.value()),
@@ -93,10 +88,11 @@ export async function getWeatherData(params: Partial<WeatherParams> = {}): Promi
         cloudCover: formatNumber(current.variables(11)!.value()),
         pressureMsl: formatNumber(current.variables(12)!.value()),
         surfacePressure: formatNumber(current.variables(13)!.value()),
+        weatherCode: current.variables(14) ? current.variables(14)!.value() : 0, // 添加weatherCode
       },
       minutely15: {
         time: [...Array((Number(minutely15.timeEnd()) - Number(minutely15.time())) / minutely15.interval())].map(
-          (_, i) => createLocalDate(Number(minutely15.time()) + i * minutely15.interval()) // 不添加utcOffsetSeconds
+          (_, i) => createLocalDate(Number(minutely15.time()) + i * minutely15.interval())
         ),
         precipitation: formatFloatArray(minutely15.variables(0)!.valuesArray()!),
         rain: formatFloatArray(minutely15.variables(1)!.valuesArray()!),
@@ -104,7 +100,7 @@ export async function getWeatherData(params: Partial<WeatherParams> = {}): Promi
       },
       hourly: {
         time: [...Array((Number(hourly.timeEnd()) - Number(hourly.time())) / hourly.interval())].map(
-          (_, i) => createLocalDate(Number(hourly.time()) + i * hourly.interval()) // 不添加utcOffsetSeconds
+          (_, i) => createLocalDate(Number(hourly.time()) + i * hourly.interval())
         ),
         temperature2m: formatFloatArray(hourly.variables(0)!.valuesArray()!),
         relativeHumidity2m: formatFloatArray(hourly.variables(1)!.valuesArray()!),
@@ -128,10 +124,11 @@ export async function getWeatherData(params: Partial<WeatherParams> = {}): Promi
         isDay: hourly.variables(19)!.valuesArray()!,
         lightningPotential: formatFloatArray(hourly.variables(20)!.valuesArray()!),
         sunshineDuration: formatFloatArray(hourly.variables(21)!.valuesArray()!),
+        weatherCode: hourly.variables(22) ? formatIntArray(hourly.variables(22)!.valuesArray()!) : new Int32Array(hourly.variables(0)!.valuesArray()!.length).fill(0), // 添加weatherCode
       },
       daily: {
         time: [...Array((Number(daily.timeEnd()) - Number(daily.time())) / daily.interval())].map(
-          (_, i) => createLocalDate(Number(daily.time()) + i * daily.interval()) // 不添加utcOffsetSeconds
+          (_, i) => createLocalDate(Number(daily.time()) + i * daily.interval())
         ),
         temperature2mMax: formatFloatArray(daily.variables(0)!.valuesArray()!),
         temperature2mMin: formatFloatArray(daily.variables(1)!.valuesArray()!),
@@ -141,10 +138,10 @@ export async function getWeatherData(params: Partial<WeatherParams> = {}): Promi
         windGusts10mMax: formatFloatArray(daily.variables(5)!.valuesArray()!),
         windDirection10mDominant: formatFloatArray(daily.variables(6)!.valuesArray()!),
         sunrise: [...Array(sunrise.valuesInt64Length())].map(
-          (_, i) => createLocalDate(Number(sunrise.valuesInt64(i))) // 不添加utcOffsetSeconds
+          (_, i) => createLocalDate(Number(sunrise.valuesInt64(i)))
         ),
         sunset: [...Array(sunset.valuesInt64Length())].map(
-          (_, i) => createLocalDate(Number(sunset.valuesInt64(i))) // 不添加utcOffsetSeconds
+          (_, i) => createLocalDate(Number(sunset.valuesInt64(i)))
         ),
         daylightDuration: formatFloatArray(daily.variables(9)!.valuesArray()!),
         sunshineDuration: formatFloatArray(daily.variables(10)!.valuesArray()!),
@@ -153,7 +150,7 @@ export async function getWeatherData(params: Partial<WeatherParams> = {}): Promi
         snowfallSum: formatFloatArray(daily.variables(13)!.valuesArray()!),
         precipitationSum: formatFloatArray(daily.variables(14)!.valuesArray()!),
         precipitationHours: formatFloatArray(daily.variables(15)!.valuesArray()!),
-        precipitationProbabilityMax: formatFloatArray(daily.variables(16)!.valuesArray()!),
+        weatherCode: daily.variables(16) ? formatIntArray(daily.variables(16)!.valuesArray()!) : new Int32Array(daily.variables(0)!.valuesArray()!.length).fill(0), // 替换precipitation_probability_max为weatherCode
       },
       location: {
         latitude,
@@ -180,6 +177,15 @@ function formatFloatArray(array: Float32Array): Float32Array {
   return result;
 }
 
+// 格式化Int32Array
+function formatIntArray(array: Float32Array): Int32Array {
+  const result = new Int32Array(array.length);
+  for (let i = 0; i < array.length; i++) {
+    result[i] = Math.round(array[i]);
+  }
+  return result;
+}
+
 // 辅助函数 - 获取风向文字描述
 export function getWindDirection(degrees: number): string {
   const directions = ['北', '东北偏北', '东北', '东北偏东', '东', '东南偏东', '东南', '东南偏南', 
@@ -187,20 +193,116 @@ export function getWindDirection(degrees: number): string {
   return directions[Math.round(degrees / 22.5) % 16];
 }
 
-// 辅助函数 - 根据云量、降水量和昼夜状态获取天气图标
-export function getWeatherIcon(cloudCover: number, precipitation: number, isDay: number): string {
-  if (precipitation > 5) {
-    return isDay ? '🌧️' : '🌧️';  // 大雨
-  } else if (precipitation > 0.5) {
-    return isDay ? '🌦️' : '🌧️';  // 小雨
-  } else if (cloudCover > 80) {
-    return isDay ? '☁️' : '☁️';  // 阴
-  } else if (cloudCover > 50) {
-    return isDay ? '⛅' : '☁️';  // 多云
-  } else if (cloudCover > 20) {
-    return isDay ? '🌤️' : '🌙';  // 少云
-  } else {
-    return isDay ? '☀️' : '🌙';  // 晴
+// 根据天气代码获取天气描述
+export function getWeatherDescription(code: number): string {
+  switch (code) {
+    case 0:
+      return "晴朗";
+    case 1:
+      return "大部晴朗";
+    case 2:
+      return "局部多云";
+    case 3:
+      return "阴天";
+    case 45:
+    case 48:
+      return "雾";
+    case 51:
+      return "小毛毛雨";
+    case 53:
+      return "毛毛雨";
+    case 55:
+      return "浓毛毛雨";
+    case 56:
+    case 57:
+      return "冻雨";
+    case 61:
+      return "小雨";
+    case 63:
+      return "中雨";
+    case 65:
+      return "大雨";
+    case 66:
+    case 67:
+      return "冻雨";
+    case 71:
+      return "小雪";
+    case 73:
+      return "中雪";
+    case 75:
+      return "大雪";
+    case 77:
+      return "雪粒";
+    case 80:
+      return "小阵雨";
+    case 81:
+      return "阵雨";
+    case 82:
+      return "强阵雨";
+    case 85:
+      return "小阵雪";
+    case 86:
+      return "强阵雪";
+    case 95:
+      return "雷暴";
+    case 96:
+    case 99:
+      return "雷暴伴冰雹";
+    default:
+      return "未知天气";
+  }
+}
+
+// 根据天气代码和昼夜状态获取天气图标
+export function getWeatherIcon(weatherCode: number, isDay: number): string {
+  const dayTime = isDay === 1;
+  
+  switch (weatherCode) {
+    case 0: // 晴朗
+      return dayTime ? '☀️' : '🌙';
+    case 1: // 大部晴朗
+      return dayTime ? '🌤️' : '🌙';
+    case 2: // 局部多云
+      return dayTime ? '⛅' : '☁️';
+    case 3: // 阴天
+      return '☁️';
+    case 45: // 雾
+    case 48: // 雾凇
+      return '🌫️';
+    case 51: // 小毛毛雨
+    case 53: // 毛毛雨
+    case 55: // 浓毛毛雨
+      return dayTime ? '🌦️' : '🌧️';
+    case 56: // 冻雨(轻)
+    case 57: // 冻雨(重)
+      return '🌨️';
+    case 61: // 小雨
+    case 63: // 中雨
+      return dayTime ? '🌦️' : '🌧️';
+    case 65: // 大雨
+      return '🌧️';
+    case 66: // 冻雨(轻)
+    case 67: // 冻雨(重)
+      return '🌨️';
+    case 71: // 小雪
+    case 73: // 中雪
+    case 75: // 大雪
+    case 77: // 雪粒
+      return '❄️';
+    case 80: // 小阵雨
+    case 81: // 阵雨
+      return dayTime ? '🌦️' : '🌧️';
+    case 82: // 强阵雨
+      return '🌧️';
+    case 85: // 小阵雪
+    case 86: // 强阵雪
+      return '🌨️';
+    case 95: // 雷暴
+    case 96: // 雷暴伴冰雹
+    case 99: // 雷暴伴强冰雹
+      return '⛈️';
+    default:
+      return dayTime ? '☀️' : '🌙'; // 默认图标
   }
 }
 

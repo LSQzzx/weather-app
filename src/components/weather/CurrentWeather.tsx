@@ -1,7 +1,7 @@
 import React from 'react';
 import { WeatherData } from '@/types/weather';
 import Card from '../ui/Card';
-import { formatTime, getWeatherIcon, getWindDirection } from '@/lib/weather';
+import { formatTime, getWeatherIcon, getWeatherDescription, getWindDirection } from '@/lib/weather';
 
 interface CurrentWeatherProps {
   data: WeatherData;
@@ -14,7 +14,8 @@ const formatDisplayNumber = (value: number): string => {
 
 export default function CurrentWeather({ data, locationName }: CurrentWeatherProps) {
   const current = data.current;
-  const icon = getWeatherIcon(current.cloudCover, current.precipitation, current.isDay);
+  const icon = getWeatherIcon(current.weatherCode, current.isDay);
+  const weatherDesc = getWeatherDescription(current.weatherCode);
   
   return (
     <Card className="mb-6">
@@ -41,11 +42,7 @@ export default function CurrentWeather({ data, locationName }: CurrentWeatherPro
         
         <div className="flex flex-col items-center">
           <span className="text-7xl mb-2">{icon}</span>
-          <span className="text-xl">
-            {current.cloudCover > 80 ? '阴' : 
-             current.cloudCover > 50 ? '多云' : 
-             current.cloudCover > 20 ? '少云' : '晴朗'}
-          </span>
+          <span className="text-xl">{weatherDesc}</span>
         </div>
       </div>
       

@@ -7,50 +7,46 @@ interface HourlyForecastProps {
   data: WeatherData;
 }
 
-// 添加格式化函数，保持数值在显示时保留一位小数
+// 格式化显示数值
 const formatDisplayNumber = (value: number): string => {
   return value.toFixed(1);
 };
 
 export default function HourlyForecast({ data }: HourlyForecastProps) {
-  // 只显示未来24小时
-  const currentTime = data.current.time.getTime();
-  const currentTimeIndex = data.hourly.time.findIndex(
-    time => time.getTime() >= currentTime
-  );
+  // 获取未来24小时的数据
+  // const currentHour = new Date().getHours();
+  const next24Hours = data.hourly.time
+    .map((time, index) => ({
+      time,
+      temperature: data.hourly.temperature2m[index],
+      apparentTemperature: data.hourly.apparentTemperature[index],
+      weatherCode: data.hourly.weatherCode[index],
+      isDay: data.hourly.isDay[index]
+    }))
+    .filter(item => {
+      // 过滤出当前时间之后的24小时
+      return item.time.getTime() >= Date.now();
+    })
+    .slice(0, 24);
   
-  const nextHours = currentTimeIndex !== -1 
-    ? data.hourly.time.slice(currentTimeIndex, currentTimeIndex + 24)
-    : data.hourly.time.slice(0, 24);
-    
   return (
     <Card title="24小时预报" className="mb-6">
       <div className="overflow-x-auto">
-        <div className="flex space-x-6 min-w-max pb-2">
-          {nextHours.map((time, i) => {
-            const index = currentTimeIndex !== -1 
-              ? currentTimeIndex + i 
-              : i;
-              
-            if (index >= data.hourly.time.length) return null;
-            
-            const cloudCover = data.hourly.cloudCover[index];
-            const isDay = data.hourly.isDay[index];
-            const precip = data.hourly.precipitation[index];
-            const icon = getWeatherIcon(cloudCover, precip, isDay);
-            
-            return (
-              <div key={time.toString()} className="flex flex-col items-center w-14">
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {i === 0 ? '现在' : formatTime(time)}
-                </div>
-                <div className="text-xl my-2">{icon}</div>
-                <div className="font-medium">
-                  {formatDisplayNumber(data.hourly.temperature2m[index])}°C
-                </div>
+        <div className="flex space-x-4 pb-2 min-w-max">
+          {next24Hours.map((hourData) => (
+            <div key={hourData.time.getTime()} className="flex flex-col items-center w-16">
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {formatTime(hourData.time)}
               </div>
-            );
-          })}
+              <div className="my-2 text-xl">
+                {getWeatherIcon(hourData.weatherCode, hourData.isDay)}
+              </div>
+              <div className="text-sm font-medium">{formatDisplayNumber(hourData.temperature)}°</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                体感 {formatDisplayNumber(hourData.apparentTemperature)}°
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </Card>
