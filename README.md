@@ -1,6 +1,6 @@
 # Weather-app
 
-### A weather web app using Next.js based on OpenMeter weather data (DWD Global ICON weather Model)
+### A weather web app using Next.js based on OpenMeteo weather data (DWD Global ICON weather Model)
 
 <div class="donate-container">
   <div class="donate-card">
