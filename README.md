@@ -2,6 +2,8 @@
 
 ### A weather web app using Next.js based on OpenMeteo weather data (DWD Global ICON weather Model)
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/LSQzzx/weather-app)
+
 <div class="donate-container">
   <div class="donate-card">
     <a href="https://ko-fi.com/sp1der" class="donate-btn" target="_blank">Buy me a coffee ☕️</a>
